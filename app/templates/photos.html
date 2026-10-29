@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Photo library</h1>
+<p class="muted">Photos you can put in the bottom half of any video. Upload a batch once, then pick per post.</p>
+<form method="post" action="/photos/upload" enctype="multipart/form-data" class="row upload">
+  <input type="file" name="files" accept="image/*" multiple required>
+  <button class="btn primary">Upload</button>
+</form>
+<div class="photo-grid lib">
+  {% for ph in photos %}
+    <form method="post" action="/photos/{{ ph.id }}/delete" class="thumb">
+      <img src="/media/photo/{{ ph.id }}" loading="lazy" alt="">
+      <button class="x" title="Delete">×</button>
+    </form>
+  {% else %}
+    <p class="muted">No photos yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

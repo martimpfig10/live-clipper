@@ -1,0 +1,33 @@
+services:
+  # Review web app (http://<server>:8000, login from .env)
+  web:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/app/config.yaml:ro
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Pipeline: ingest -> transcribe -> highlights -> plan -> captions -> renders
+  worker:
+    build: .
+    command: ["python", "-m", "app.worker"]
+    env_file: .env
+    volumes:
+      - ./data:/data
+      - ./config.yaml:/app/config.yaml:ro
+    restart: unless-stopped
+
+  # Records the creator's TikTok lives automatically (checks every 5 min)
+  # https://github.com/Michele0303/tiktok-live-recorder
+  recorder:
+    image: michele0303/tiktok-live-recorder:latest
+    command: ["-user", "${CREATOR_USERNAME:-wazeoficial}", "-mode", "automatic",
+              "-automatic_interval", "5", "-output", "/output"]
+    volumes:
+      - ./data/recordings:/output
+      # optional: TikTok cookies if lives need a logged-in session (see README)
+      # - ./recorder/cookies.json:/app/cookies.json:ro
+    restart: unless-stopped

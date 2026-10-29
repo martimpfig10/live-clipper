@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Lives</h1>
+<p class="muted">New lives are recorded automatically. You can also upload a recording here, or drop it in the <code>data/inbox</code> folder.</p>
+<form method="post" action="/sources/upload" enctype="multipart/form-data" class="row upload">
+  <input type="file" name="file" accept="video/*" required>
+  <button class="btn primary">Upload</button>
+</form>
+<p>Pool: <b>{{ runway.pool }}</b> unused clips ≈ <b>{{ runway.days }}</b> days at {{ runway.per_day }}/day.</p>
+<table class="list">
+  <tr><th>File</th><th>Length</th><th>Status</th><th>Clips</th><th></th></tr>
+  {% for s in sources %}
+  <tr>
+    <td>{{ s.filename }}<br><small class="muted">{{ s.kind }} · {{ s.created_at[:16].replace('T', ' ') }}</small></td>
+    <td>{{ (s.duration / 60) | round | int }} min</td>
+    <td>
+      <span class="pill {{ s.status }}">{{ s.status }}</span>
+      <small class="muted">{{ s.stage }}</small>
+      {% if s.error %}<br><small class="err">{{ s.error[:200] }}</small>{% endif %}
+    </td>
+    <td>{{ s.n_clips }}</td>
+    <td>{% if s.status == 'error' %}<form method="post" action="/sources/{{ s.id }}/retry"><button class="btn">Retry</button></form>{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" class="muted">Nothing yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

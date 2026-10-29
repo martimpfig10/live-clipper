@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="muted" href="/day/{{ p.day }}">‹ {{ p.day | day_label }}</a>
+<h1>{{ p.account }} · {{ p.slot }}</h1>
+<p class="muted">From {{ p.src_name }} at {{ p.start | mmss }}–{{ p.end | mmss }} ({{ (p.end - p.start) | round | int }}s) · score {{ p.score }} · {{ p.category }} · {{ p.dialect }}</p>
+
+<div class="post-grid" data-post="{{ p.id }}" data-render="{{ p.render_status }}">
+  <div class="player big">
+    {% if p.render_status == 'done' %}
+      <video src="/media/post/{{ p.id }}?v={{ p.updated_at }}" controls playsinline preload="metadata"></video>
+    {% elif p.render_status == 'error' %}
+      <div class="ph err">Render failed<br><small>{{ p.render_error[:300] }}</small></div>
+    {% else %}
+      <div class="ph">Rendering…</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <h3>Caption</h3>
+    <form method="post" action="/post/{{ p.id }}/caption">
+      <textarea class="caption" id="cap" name="caption" rows="7">{{ p.caption }}</textarea>
+      <div class="actions">
+        <button type="button" class="btn primary" data-copy="cap">Copy caption</button>
+        <button class="btn">Save</button>
+        <button class="btn" formaction="/post/{{ p.id }}/regen-caption">Rewrite with AI</button>
+      </div>
+    </form>
+
+    <h3>Hook title</h3>
+    <form method="post" action="/post/{{ p.id }}/hook" class="row">
+      <input name="hook" value="{{ p.hook }}" maxlength="120">
+      <button class="btn">Apply</button>
+    </form>
+
+    <h3>Crop (live part)</h3>
+    <form method="post" action="/post/{{ p.id }}/crop" class="presets">
+      {% for name, v in presets.items() %}
+        <button class="btn {% if v == crop %}on{% endif %}" name="preset" value="{{ name }}">{{ name.replace('_', ' ') }}</button>
+      {% endfor %}
+    </form>
+    <form method="post" action="/post/{{ p.id }}/crop" class="sliders">
+      <label>Left ↔ right <input type="range" name="cx" min="0" max="1" step="0.01" value="{{ crop.cx or 0.5 }}"></label>
+      <label>Up ↕ down <input type="range" name="cy" min="0" max="1" step="0.01" value="{{ crop.cy or 0.5 }}"></label>
+      <label>Zoom <input type="range" name="zoom" min="1" max="3" step="0.05" value="{{ crop.zoom or 1 }}"></label>
+      <button class="btn">Apply custom crop</button>
+    </form>
+
+    <h3>Photo (bottom half)</h3>
+    <form method="post" action="/post/{{ p.id }}/photo" enctype="multipart/form-data" class="row">
+      <input type="file" name="file" accept="image/*">
+      <button class="btn">Upload &amp; use</button>
+    </form>
+    <form method="post" action="/post/{{ p.id }}/photo" class="photo-grid">
+      {% for ph in photos %}
+        <button name="photo_id" value="{{ ph.id }}" class="thumb {% if ph.id == p.photo_id %}on{% endif %}" title="{{ ph.kind }}">
+          <img src="/media/photo/{{ ph.id }}" loading="lazy" alt="">
+          {% if ph.kind == 'frame' %}<span>frame</span>{% endif %}
+        </button>
+      {% endfor %}
+    </form>
+
+    <h3>Done?</h3>
+    <div class="actions">
+      {% if p.render_status == 'done' %}<a class="btn" href="/media/post/{{ p.id }}?download=1">Download video</a>{% endif %}
+      <form method="post" action="/post/{{ p.id }}/posted">
+        <button class="btn {% if p.status == 'posted' %}ok{% endif %}">{% if p.status == 'posted' %}✓ Posted{% else %}Mark posted{% endif %}</button>
+      </form>
+      <form method="post" action="/post/{{ p.id }}/reject" onsubmit="return confirm('Reject this clip? It will be replaced by the next one from the pool.')">
+        <button class="btn danger">Reject &amp; replace</button>
+      </form>
+    </div>
+
+    <details>
+      <summary>Transcript of this clip</summary>
+      <p class="muted">{{ p.text }}</p>
+      {% if p.reason %}<p class="muted"><i>Why: {{ p.reason }}</i></p>{% endif %}
+    </details>
+  </div>
+</div>
+{% endblock %}

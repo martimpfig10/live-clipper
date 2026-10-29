@@ -1,0 +1,63 @@
+# live-clipper configuration. Secrets go in .env, everything else here.
+
+creator:
+  username: wazeoficial          # TikTok username of the creator (recorder + credit line)
+  credit_line: "🎥 @wazeoficial"  # appended to every description ("" to disable)
+
+timezone: Europe/Lisbon
+
+# The accounts you post to. Each gets `posts_per_day` clips per day, one per slot.
+# Slots are staggered so the accounts don't all post at the same minute.
+accounts:
+  - name: conta1
+    slots: ["13:00", "20:00"]
+  - name: conta2
+    slots: ["13:30", "20:30"]
+  - name: conta3
+    slots: ["14:00", "21:00"]
+  - name: conta4
+    slots: ["14:30", "21:30"]
+
+planning:
+  days_ahead: 3          # how many days of posts to keep planned (fills as pool allows)
+
+clips:
+  min_seconds: 15
+  max_seconds: 75
+  target_seconds: 35     # what the LLM aims for
+  window_minutes: 12     # transcript window sent to the LLM per request
+  max_per_window: 5
+  min_score: 6           # clips scored below this (1-10) are dropped
+  dedupe_overlap: 0.4    # same-source clips overlapping more than this are merged
+  dedupe_text_jaccard: 0.6  # cross-source clips with this word overlap are treated as duplicates
+
+transcription:
+  language: pt
+  # Names / slang Whisper should spell correctly
+  prompt: "Live do wazeoficial no TikTok. Conversa entre portugueses e brasileiros."
+  chunk_seconds: 600
+
+render:
+  width: 1080
+  height: 1920
+  split: 0.5             # fraction of height used by the live clip (top); photo gets the rest
+  fps: 30
+  crf: 21
+  preset: veryfast
+  hook_position: seam    # seam | top
+  hook_font_size: 70
+  font_path: ""          # leave empty to auto-detect a bold sans font
+
+# Crop presets offered in the review screen. cx/cy = crop centre (0-1), zoom >= 1.
+crop_presets:
+  center:      {cx: 0.5,  cy: 0.5,  zoom: 1.0}
+  upper:       {cx: 0.5,  cy: 0.35, zoom: 1.0}
+  guest_left:  {cx: 0.25, cy: 0.45, zoom: 2.0}
+  guest_right: {cx: 0.75, cy: 0.45, zoom: 2.0}
+  zoom_center: {cx: 0.5,  cy: 0.45, zoom: 1.5}
+default_crop: center
+
+captions:
+  hashtags_min: 3
+  hashtags_max: 6
+  base_hashtags: ["#wazeoficial"]   # always included

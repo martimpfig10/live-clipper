@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="tabs">
+  {% for d in days %}
+    <a class="tab {% if d == day %}on{% endif %}" href="/day/{{ d }}">{{ d | day_label }}</a>
+  {% endfor %}
+</div>
+
+<div class="stats">
+  <span><b>{{ done }}/{{ total }}</b> posted</span>
+  <span>Pool: <b>{{ runway.pool }}</b> clips ≈ <b>{{ runway.days }}</b> days</span>
+</div>
+{% if busy %}
+  <div class="notice">Processing: {% for b in busy %}{{ b.filename }} ({{ b.stage or 'queued' }}){% if not loop.last %}, {% endif %}{% endfor %}</div>
+{% endif %}
+{% if runway.days < 1 %}
+  <div class="notice warn">Pool is low — upload or wait for a new live so tomorrow is covered.</div>
+{% endif %}
+
+{% for acc in accounts %}
+<section class="account">
+  <h2>{{ acc.name }}</h2>
+  {% set posts = by_acc.get(acc.name, []) %}
+  {% if not posts %}<p class="muted">No clips planned yet.</p>{% endif %}
+  {% for p in posts %}
+  <article class="card {{ p.status }}" data-post="{{ p.id }}" data-render="{{ p.render_status }}">
+    <div class="card-head">
+      <span class="slot">{{ p.slot }}</span>
+      <span class="pill">{{ p.dialect }}</span>
+      {% if p.status == 'posted' %}<span class="pill ok">posted</span>{% endif %}
+      <a class="edit" href="/post/{{ p.id }}">Edit ›</a>
+    </div>
+    <div class="card-body">
+      <div class="player">
+        {% if p.render_status == 'done' %}
+          <video src="/media/post/{{ p.id }}?v={{ p.updated_at }}" controls playsinline preload="metadata"></video>
+        {% elif p.render_status == 'error' %}
+          <div class="ph err">Render failed<br><small>{{ p.render_error[:120] }}</small></div>
+        {% else %}
+          <div class="ph">Rendering…</div>
+        {% endif %}
+      </div>
+      <div class="meta">
+        <div class="hook">{{ p.hook }}</div>
+        <textarea class="caption" id="cap{{ p.id }}" readonly rows="6">{{ p.caption or 'Writing caption…' }}</textarea>
+        <div class="actions">
+          <button class="btn primary" data-copy="cap{{ p.id }}">Copy caption</button>
+          {% if p.render_status == 'done' %}
+            <a class="btn" href="/media/post/{{ p.id }}?download=1">Download</a>
+          {% endif %}
+          <form method="post" action="/post/{{ p.id }}/posted">
+            <button class="btn {% if p.status == 'posted' %}ok{% endif %}">{% if p.status == 'posted' %}✓ Posted{% else %}Mark posted{% endif %}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endfor %}
+{% endblock %}
